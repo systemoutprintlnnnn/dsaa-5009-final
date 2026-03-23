@@ -28,7 +28,7 @@
 
 ## 2. 核心创新点
 
-### 2.1 长度可控摘要生成 (Length-Controllable Summarization)
+### 2.1 创新点一：长度可控摘要生成 (Length-Controllable Summarization)
 
 通过特殊 token 实现细粒度长度控制：
 
@@ -38,7 +38,7 @@
 <len_LONG> + dialogue → 36+ words 摘要 (详细版)
 ```
 
-### 2.2 创新优势
+**创新优势**:
 
 | 特点 | 说明 |
 |------|------|
@@ -47,14 +47,79 @@
 | **实用性** | 用户可按需选择详细程度，满足不同场景需求 |
 | **通用性** | 可迁移到多种基座模型 (Encoder-Decoder & Decoder-Only) |
 
+---
+
+### 2.2 创新点二：多任务学习 (Multi-Task Learning)
+
+**核心思路**: 同时学习"写摘要"和"写主题"两个任务，相互促进
+
+```
+DialogSum 数据集字段:
+├── dialogue: 对话内容
+├── summary: 摘要 (原项目用了)
+└── topic: 主题标签 (原项目没用！我们用！)
+
+示例:
+对话: "Matt: Do you want to go for a date? Agnes: Yes, see you Saturday!"
+摘要: "Matt invites Agnes for a date on Saturday."
+主题: "date invitation"
+```
+
+**为什么多任务学习有效？**
+
+类比理解：
+- 单任务 = 只学阅读 → 阅读成绩提升
+- 多任务 = 学阅读 + 学写作 → 阅读成绩提升更多！
+
+应用到我们的项目：
+```
+任务 1: 对话 → 摘要
+任务 2: 对话 → 主题
+
+学会判断"主题"，能帮助模型更好地理解对话，从而写出更好的摘要。
+```
+
+**实现方式**: 统一模型 + Task Prefix
+
+```python
+# 任务 1: 摘要生成 (带长度控制)
+input = "<len_MEDIUM> [SUMMARIZE] {dialogue}"
+output = summary
+
+# 任务 2: 主题生成
+input = "[TOPIC] {dialogue}"
+output = topic  # 如 "date invitation", "vaccines"
+```
+
+**训练数据构建**:
+```
+原始数据: 12,460 个对话
+↓
+多任务数据: 12,460 × 2 = 24,920 样本
+  - 12,460 个摘要任务
+  - 12,460 个主题任务
+```
+
+**预期效果**:
+| 实验 | 训练内容 | 摘要质量 (ROUGE) |
+|------|----------|------------------|
+| 单任务 | 只学摘要 | 42.5 |
+| 多任务 | 摘要 + 主题 | **44.2** ↑ |
+
+**论文贡献**:
+> 利用被忽视的 topic 字段，通过多任务学习提升摘要质量
+
+---
+
 ### 2.3 与原项目对比
 
 | 对比项 | 原项目 | 本项目 |
 |--------|--------|--------|
-| 长度控制 | prompt 拼接 "should be X words long" | 特殊 token 显式控制 |
+| 长度控制 | prompt 拼接 | 特殊 token 显式控制 ✨ |
+| 任务学习 | 单任务 (仅摘要) | 多任务 (摘要 + 主题) ✨ |
+| 数据利用 | summary 字段 | summary + **topic** 字段 ✨ |
 | 模型 | FLAN-T5, BART | FLAN-T5, Gemma-2, Llama-3.2, Qwen3 |
 | 评测 | ROUGE | ROUGE + Length Accuracy + BERTScore |
-| 创新点 | Contrastive Loss | 长度可控 + 跨模型验证 |
 
 ---
 
@@ -75,6 +140,8 @@
 
 ### 3.2 数据处理流程
 
+#### 3.2.1 长度分桶
+
 ```python
 # 按 summary 长度自动分桶
 def get_length_token(summary):
@@ -85,15 +152,37 @@ def get_length_token(summary):
         return "<len_MEDIUM>"
     else:
         return "<len_LONG>"
+```
 
-# 构建训练样本
-def preprocess(sample):
+#### 3.2.2 多任务数据构建
+
+```python
+# 每个原始样本生成 2 个训练样本
+def preprocess_multitask(sample):
+    samples = []
     length_token = get_length_token(sample["summary"])
     
-    input_text = f"{length_token} Summarize the following dialogue:\n###\n{sample['dialogue']}\n###\nSummary:"
-    target_text = sample["summary"]
+    # 任务 1: 摘要生成 (带长度控制)
+    samples.append({
+        "input": f"{length_token} [SUMMARIZE] {sample['dialogue']}",
+        "target": sample["summary"],
+        "task": "summarize"
+    })
     
-    return {"input": input_text, "target": target_text}
+    # 任务 2: 主题生成
+    samples.append({
+        "input": f"[TOPIC] {sample['dialogue']}",
+        "target": sample["topic"],
+        "task": "topic"
+    })
+    
+    return samples
+
+# 构建训练数据
+train_data = []
+for sample in dataset["train"]:
+    train_data.extend(preprocess_multitask(sample))
+# 最终: 12,460 × 2 = 24,920 样本
 ```
 
 ### 3.3 预期长度分布 (待验证)
@@ -193,7 +282,7 @@ consistency = bertscore.compute(
 
 ## 6. 实验设计
 
-### 6.1 主实验: 长度控制有效性
+### 6.1 主实验一: 长度控制有效性
 
 **目标**: 证明 Length Token 能有效控制输出长度且不损失质量
 
@@ -206,7 +295,44 @@ consistency = bertscore.compute(
 - H1: Exp1-4 的 Length Accuracy 显著高于 Exp0
 - H2: Exp1-4 的 ROUGE 不低于 Exp0
 
-### 6.2 跨模型对比
+---
+
+### 6.2 主实验二: 多任务学习效果
+
+**目标**: 证明多任务学习 (摘要 + 主题) 能提升摘要质量
+
+| 实验 | 训练任务 | 训练样本数 | 目的 |
+|------|----------|------------|------|
+| **Exp1-Single** | 仅摘要 | 12,460 | Baseline |
+| **Exp1-Multi** | 摘要 + 主题 | 24,920 | 验证多任务学习 |
+
+**评测**: 都只评测摘要任务 (ROUGE)
+
+**假设**:
+- H3: Exp1-Multi 的 ROUGE > Exp1-Single
+
+**为什么有效？**
+```
+单任务模型:
+  对话 → [encoder] → [decoder] → 摘要
+  只学会"怎么写摘要"
+
+多任务模型:
+  对话 → [encoder] → [decoder] → 摘要
+                  ↘ [decoder] → 主题
+  
+  学会"怎么写摘要" + "理解对话主题"
+  ↓
+  主题任务帮助 encoder 更好理解对话语义
+  ↓
+  写摘要时 encoder 提供更好的表示
+  ↓
+  摘要质量提升！
+```
+
+---
+
+### 6.3 跨模型对比
 
 **目标**: 分析哪种模型对长度控制更敏感
 
@@ -295,16 +421,22 @@ dsaa-5009-final/
 ```python
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
 
-# Encoder-Decoder (FLAN-T5)
 tokenizer = AutoTokenizer.from_pretrained("google/flan-t5-base")
 model = AutoModelForSeq2SeqLM.from_pretrained("google/flan-t5-base")
 
-# 添加长度控制 token
-length_tokens = ["<len_SHORT>", "<len_MEDIUM>", "<len_LONG>"]
-num_added = tokenizer.add_tokens(length_tokens)
+# 添加特殊 token
+special_tokens = [
+    # 长度控制 token
+    "<len_SHORT>", "<len_MEDIUM>", "<len_LONG>",
+    # 任务标识 token
+    "[SUMMARIZE]", "[TOPIC]"
+]
+
+num_added = tokenizer.add_tokens(special_tokens)
 model.resize_token_embeddings(len(tokenizer))
 
 print(f"Added {num_added} tokens")
+# 输出: Added 5 tokens
 ```
 
 ### 7.3 LoRA 配置
@@ -398,27 +530,46 @@ training_args = Seq2SeqTrainingArguments(
 
 ### 9.1 论文贡献
 
-1. **显式长度控制机制**
-   - 通过特殊 token 实现细粒度长度控制
-   - 优于简单的 prompt 拼接方法
+**1. 显式长度控制机制**
+- 通过特殊 token 实现细粒度长度控制
+- 优于简单的 prompt 拼接方法
+- Length Accuracy > 90%
 
-2. **零成本数据构建**
-   - 无需额外人工标注
-   - 基于现有 summary 长度自动分桶
+**2. 多任务学习提升摘要质量** ✨
+- 利用被忽视的 topic 字段
+- 摘要 + 主题联合训练
+- ROUGE 提升 2-5%
+- 无需额外数据标注
 
-3. **跨模型验证**
-   - 在 4 种 SOTA 模型上验证方法通用性
-   - 分析不同架构对长度控制的敏感度
+**3. 跨模型验证**
+- 在 4 种 SOTA 模型上验证方法通用性
+- 分析不同架构对长度控制的敏感度
+- 分析多任务学习在不同模型上的效果
 
-4. **完整评测体系**
-   - ROUGE (摘要质量)
-   - Length Accuracy (长度控制)
-   - BERTScore (语义一致性)
+**4. 完整评测体系**
+- ROUGE (摘要质量)
+- Length Accuracy (长度控制精度)
+- Topic Accuracy (主题分类准确率) ✨
+- BERTScore (语义一致性)
 
-### 9.2 可交付物
+### 9.2 预期实验结果
+
+**长度控制效果**:
+| 模型 | Length Accuracy | ROUGE-L |
+|------|-----------------|---------|
+| Baseline (无 token) | ~40% | 39.1 |
+| + Length Token | **~85%** | 39.5 |
+
+**多任务学习效果**:
+| 训练方式 | ROUGE-1 | ROUGE-2 | ROUGE-L |
+|----------|---------|---------|---------|
+| 单任务 (仅摘要) | 42.5 | 18.3 | 39.1 |
+| 多任务 (摘要+主题) | **44.2** | **19.8** | **40.8** |
+
+### 9.3 可交付物
 
 - [ ] 训练代码 (基于 HuggingFace Transformers)
-- [ ] 评测代码 (ROUGE + Length Accuracy)
+- [ ] 评测代码 (ROUGE + Length Accuracy + Topic Accuracy)
 - [ ] 4 个微调后的模型 (上传 HuggingFace Hub)
 - [ ] 实验结果表格和图表
 - [ ] 最终报告/论文
@@ -489,7 +640,8 @@ training_args = Seq2SeqTrainingArguments(
 
 | 日期 | 更新内容 |
 |------|----------|
-| 2026-03-23 | 创建项目方案 |
+| 2026-03-23 | 创建项目方案，确定长度可控摘要方向 |
+| 2026-03-23 | 添加创新点二：多任务学习 (摘要 + 主题) |
 
 ---
 
