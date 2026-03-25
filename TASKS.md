@@ -6,7 +6,7 @@
 ---
 
 ## In Progress
-- [ ] 完成 CP-02 数据分析与长度分桶验证（补充分布图）
+- [ ] 开始 CP-03 多任务数据管线验证
 - [ ] 创建 `README.md`
 - [ ] 创建基础配置文件
 
@@ -31,7 +31,6 @@
 - [ ] 编写多任务数据构建逻辑（summary + topic）
 - [ ] 编写 tokenizer 预处理代码
 - [x] 保存数据分析结果到 `results/metrics/`
-- [ ] 生成长度分布图 `length_distribution.png`
 
 ### Phase 2 - 模型与训练框架
 - [ ] 编写模型加载模块 `src/models/load_model.py`

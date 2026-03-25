@@ -8,6 +8,7 @@ import math
 from pathlib import Path
 from statistics import mean, median
 
+import matplotlib.pyplot as plt
 from datasets import load_dataset
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -69,6 +70,33 @@ def summarize_split(dataset_split):
     }
 
 
+def save_bucket_plot(report: dict) -> Path:
+    splits = list(report["splits"].keys())
+    bucket_names = ["SHORT", "MEDIUM", "LONG"]
+    colors = {"SHORT": "#4CAF50", "MEDIUM": "#2196F3", "LONG": "#FF9800"}
+
+    x = range(len(splits))
+    width = 0.22
+
+    plt.figure(figsize=(10, 6))
+    for idx, bucket in enumerate(bucket_names):
+        values = [report["splits"][split]["bucket_ratios"][bucket] for split in splits]
+        positions = [i + (idx - 1) * width for i in x]
+        plt.bar(positions, values, width=width, label=bucket, color=colors[bucket])
+
+    plt.xticks(list(x), splits)
+    plt.ylim(0, 1.0)
+    plt.ylabel("Ratio")
+    plt.title("DialogSum Summary Length Bucket Distribution")
+    plt.legend()
+    plt.tight_layout()
+
+    output_path = METRICS_DIR / "length_distribution.png"
+    plt.savefig(output_path, dpi=200)
+    plt.close()
+    return output_path
+
+
 def main() -> None:
     print("Loading DialogSum dataset...")
     dataset = load_dataset("knkarthick/dialogsum")
@@ -97,6 +125,9 @@ def main() -> None:
     output_path = METRICS_DIR / "data_stats.json"
     output_path.write_text(json.dumps(report, indent=2, ensure_ascii=False))
     print(f"\nSaved stats to: {output_path}")
+
+    plot_path = save_bucket_plot(report)
+    print(f"Saved plot to: {plot_path}")
 
     print("\nDone.")
 
