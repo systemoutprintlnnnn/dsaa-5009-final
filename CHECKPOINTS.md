@@ -61,22 +61,23 @@
 ---
 
 ## CP-03 多任务数据管线验证
-- **Status**: ⚪ PENDING
+- **Status**: 🟢 PASS
 - **Goal**: 验证 summary + topic 的多任务数据构建逻辑正确
 - **Done Definition**:
   - 每条原始样本能扩展为摘要任务 + 主题任务
   - 输入格式正确
   - 输出字段完整
 - **Verification**:
-  - [ ] 能正确生成 `[SUMMARIZE]` 样本
-  - [ ] 能正确生成 `[TOPIC]` 样本
-  - [ ] 长度 token 能正确注入
-  - [ ] 随机抽样检查 5 条样本内容
-  - [ ] 生成 `results/metrics/multitask_samples.json`
+  - [x] 能正确生成 `[SUMMARIZE]` 样本
+  - [x] 能正确生成 `[TOPIC]` 样本
+  - [x] 长度 token 能正确注入
+  - [x] 随机抽样检查 5 条样本内容
+  - [x] 生成 `results/metrics/multitask_samples.json`
 - **Artifacts**:
   - `src/data/preprocessing.py`
+  - `scripts/check_multitask_data.py`
   - `results/metrics/multitask_samples.json`
-- **Result**: Pending
+- **Result**: 多任务样本构造、长度 token 注入与抽样检查均已通过，CP-03 完成。
 
 ---
 
