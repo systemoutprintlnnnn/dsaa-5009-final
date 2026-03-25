@@ -38,7 +38,7 @@
 ---
 
 ## CP-02 数据分析与长度分桶验证
-- **Status**: ⚪ PENDING
+- **Status**: 🟡 PARTIAL
 - **Goal**: 验证 DialogSum 数据集可读取，长度分布合理，分桶阈值可用
 - **Done Definition**:
   - 能成功读取 train/validation/test
@@ -46,17 +46,16 @@
   - 输出 SHORT / MEDIUM / LONG 比例
   - 给出是否需要调整阈值的结论
 - **Verification**:
-  - [ ] `scripts/analyze_data.py` 可运行
-  - [ ] 输出 train/validation/test 样本数
-  - [ ] 输出 summary 长度均值 / 中位数 / 分位数
-  - [ ] 输出 SHORT/MEDIUM/LONG 分桶比例
-  - [ ] 生成 `results/metrics/data_stats.json`
+  - [x] `scripts/analyze_data.py` 可运行
+  - [x] 输出 train/validation/test 样本数
+  - [x] 输出 summary 长度均值 / 中位数 / 分位数
+  - [x] 输出 SHORT/MEDIUM/LONG 分桶比例
+  - [x] 生成 `results/metrics/data_stats.json`
   - [ ] 生成 `results/metrics/length_distribution.png`
 - **Artifacts**:
   - `scripts/analyze_data.py`
   - `results/metrics/data_stats.json`
-  - `results/metrics/length_distribution.png`
-- **Result**: Pending
+- **Result**: 数据读取与长度统计已通过；分桶可用，但尚未生成分布图，因此暂记为 PARTIAL。
 
 ---
 

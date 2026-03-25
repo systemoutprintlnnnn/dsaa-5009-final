@@ -6,9 +6,9 @@
 ---
 
 ## In Progress
-- [ ] 创建代码目录结构
-- [ ] 创建项目基础骨架文件
-- [ ] 建立任务追踪机制
+- [ ] 完成 CP-02 数据分析与长度分桶验证（补充分布图）
+- [ ] 创建 `README.md`
+- [ ] 创建基础配置文件
 
 ---
 
@@ -16,7 +16,7 @@
 
 ### Phase 0 - 项目初始化
 - [ ] 创建 `README.md`
-- [ ] 创建 `requirements.txt`
+- [x] 创建 `requirements.txt`
 - [ ] 创建基础配置文件：`config/models.yaml`
 - [ ] 创建基础配置文件：`config/training.yaml`
 - [ ] 创建 `scripts/run_training.py`
@@ -24,13 +24,14 @@
 - [ ] 创建 `scripts/analyze_data.py`
 
 ### Phase 1 - 数据部分
-- [ ] 下载并读取 DialogSum 数据集
-- [ ] 统计 summary 长度分布
-- [ ] 验证 SHORT / MEDIUM / LONG 分桶是否合理
-- [ ] 编写长度分桶函数
+- [x] 下载并读取 DialogSum 数据集
+- [x] 统计 summary 长度分布
+- [x] 验证 SHORT / MEDIUM / LONG 分桶是否合理
+- [x] 编写长度分桶函数
 - [ ] 编写多任务数据构建逻辑（summary + topic）
 - [ ] 编写 tokenizer 预处理代码
-- [ ] 保存数据分析结果到 `results/metrics/`
+- [x] 保存数据分析结果到 `results/metrics/`
+- [ ] 生成长度分布图 `length_distribution.png`
 
 ### Phase 2 - 模型与训练框架
 - [ ] 编写模型加载模块 `src/models/load_model.py`

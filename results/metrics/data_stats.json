@@ -1,0 +1,79 @@
+{
+  "dataset": "knkarthick/dialogsum",
+  "bucket_definition": {
+    "SHORT": "1-15 words",
+    "MEDIUM": "16-35 words",
+    "LONG": ">=36 words"
+  },
+  "splits": {
+    "train": {
+      "num_samples": 12460,
+      "length_stats": {
+        "min": 5,
+        "max": 153,
+        "mean": 22.87,
+        "median": 21.0,
+        "p25": 15.0,
+        "p75": 28.0,
+        "p90": 36.0,
+        "p95": 42.0
+      },
+      "bucket_counts": {
+        "SHORT": 3199,
+        "MEDIUM": 7896,
+        "LONG": 1365
+      },
+      "bucket_ratios": {
+        "SHORT": 0.2567,
+        "MEDIUM": 0.6337,
+        "LONG": 0.1096
+      }
+    },
+    "validation": {
+      "num_samples": 500,
+      "length_stats": {
+        "min": 6,
+        "max": 65,
+        "mean": 20.91,
+        "median": 18.0,
+        "p25": 14.0,
+        "p75": 26.0,
+        "p90": 33.1,
+        "p95": 39.0
+      },
+      "bucket_counts": {
+        "SHORT": 162,
+        "MEDIUM": 294,
+        "LONG": 44
+      },
+      "bucket_ratios": {
+        "SHORT": 0.324,
+        "MEDIUM": 0.588,
+        "LONG": 0.088
+      }
+    },
+    "test": {
+      "num_samples": 1500,
+      "length_stats": {
+        "min": 4,
+        "max": 84,
+        "mean": 18.75,
+        "median": 17.0,
+        "p25": 13.0,
+        "p75": 23.0,
+        "p90": 30.0,
+        "p95": 35.0
+      },
+      "bucket_counts": {
+        "SHORT": 620,
+        "MEDIUM": 814,
+        "LONG": 66
+      },
+      "bucket_ratios": {
+        "SHORT": 0.4133,
+        "MEDIUM": 0.5427,
+        "LONG": 0.044
+      }
+    }
+  }
+}
