@@ -5,6 +5,34 @@
 
 ---
 
+## GPU Code Rules
+
+All code that requires a GPU to run **must** follow these rules:
+
+1. **Run on Google Colab** — not on local machine.
+2. **Publish to GitHub Gist** before running:
+   - File names must start with `DSAA5009 Final`.
+   - A target code file is created **only once**. All future changes are edits to the same Gist (do not create duplicates).
+3. The Gist URL must be recorded in `CHECKPOINTS.md` under the relevant checkpoint's Artifacts section.
+
+### Which code counts as "GPU code"?
+- Model training (`run_training.py`, training smoke tests)
+- Model inference / evaluation on full test set
+- Anything that loads a model larger than FLAN-T5-base onto GPU
+
+### Which code does NOT require Colab?
+- Data analysis (`analyze_data.py`)
+- Data preprocessing checks (`check_multitask_data.py`)
+- Pure CPU model loading smoke tests (small models, no training)
+
+### Gist Tracking Table
+
+| Gist Name | Purpose | URL | Created | Last Updated |
+|-----------|---------|-----|---------|--------------|
+| *(to be filled)* | | | | |
+
+---
+
 ## Core Principle
 
 Every step must answer 3 questions:
