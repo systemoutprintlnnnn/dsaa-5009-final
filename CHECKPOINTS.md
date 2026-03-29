@@ -118,6 +118,8 @@
   - `src/training/trainer.py`
   - `scripts/check_training_step.py`
   - `results/metrics/training_smoke_test.json`
+  - Gist: `DSAA5009 Final - CP05 Training Smoke Test.ipynb`
+  - URL: `https://gist.github.com/systemoutprintlnnnn/bf3e5c3c793937f22946590de2627587`
 - **Result**: Pending
 
 ---

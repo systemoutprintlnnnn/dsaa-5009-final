@@ -7,7 +7,7 @@
 
 ## In Progress
 - [ ] 开始 CP-05 单步训练验证
-- [ ] 创建基础配置文件
+- [x] 创建基础配置文件
 - [ ] 补充训练 smoke test
 
 ---
@@ -21,7 +21,7 @@
 - [ ] 创建基础配置文件：`config/training.yaml`
 - [ ] 创建 `scripts/run_training.py`
 - [ ] 创建 `scripts/run_evaluation.py`
-- [ ] 创建 `scripts/analyze_data.py`
+- [x] 创建 `scripts/analyze_data.py`
 
 ### Phase 1 - 数据部分
 - [x] 下载并读取 DialogSum 数据集
@@ -29,15 +29,15 @@
 - [x] 验证 SHORT / MEDIUM / LONG 分桶是否合理
 - [x] 编写长度分桶函数
 - [x] 编写多任务数据构建逻辑（summary + topic）
-- [ ] 编写 tokenizer 预处理代码
+- [x] 编写 tokenizer 预处理代码
 - [x] 保存数据分析结果到 `results/metrics/`
 
 ### Phase 2 - 模型与训练框架
-- [ ] 编写模型加载模块 `src/models/load_model.py`
+- [x] 编写模型加载模块 `src/models/load_model.py`
 - [ ] 支持 FLAN-T5 / Gemma / Llama / Qwen
-- [ ] 编写特殊 token 注入逻辑
-- [ ] 编写 LoRA / QLoRA 配置逻辑
-- [ ] 编写 Trainer 封装 `src/training/trainer.py`
+- [x] 编写特殊 token 注入逻辑
+- [x] 编写 LoRA / QLoRA 配置逻辑
+- [x] 编写 Trainer 封装 `src/training/trainer.py`
 - [ ] 编写单任务训练入口
 - [ ] 编写多任务训练入口
 
