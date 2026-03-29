@@ -7,15 +7,15 @@
 
 ## In Progress
 - [ ] 开始 CP-04 模型加载验证
-- [ ] 创建 `README.md`
 - [ ] 创建基础配置文件
+- [ ] 补充模型加载 smoke test
 
 ---
 
 ## Todo
 
 ### Phase 0 - 项目初始化
-- [ ] 创建 `README.md`
+- [x] 创建 `README.md`
 - [x] 创建 `requirements.txt`
 - [ ] 创建基础配置文件：`config/models.yaml`
 - [ ] 创建基础配置文件：`config/training.yaml`
