@@ -82,23 +82,23 @@
 ---
 
 ## CP-04 模型加载验证
-- **Status**: ⚪ PENDING
+- **Status**: 🟢 PASS
 - **Goal**: 验证模型、tokenizer、special tokens、LoRA/QLoRA 配置可正常加载
 - **Done Definition**:
   - 至少 FLAN-T5 能正常加载
   - 能添加长度 token 和任务 token
   - 能打印 trainable parameters
 - **Verification**:
-  - [ ] `scripts/check_model_loading.py --model flan-t5` 成功
-  - [ ] tokenizer vocab 成功扩展
-  - [ ] model embedding resize 成功
-  - [ ] LoRA 配置成功注入
-  - [ ] 生成 `results/metrics/model_check_flan.json`
+  - [x] `scripts/check_model_loading.py --model flan-t5` 成功
+  - [x] tokenizer vocab 成功扩展
+  - [x] model embedding resize 成功
+  - [x] LoRA 配置成功注入
+  - [x] 生成 `results/metrics/model_check_flan.json`
 - **Artifacts**:
   - `src/models/load_model.py`
   - `scripts/check_model_loading.py`
   - `results/metrics/model_check_flan.json`
-- **Result**: Pending
+- **Result**: FLAN-T5 模型、tokenizer、special tokens 与 LoRA 注入均已验证通过，CP-04 完成。
 
 ---
 
