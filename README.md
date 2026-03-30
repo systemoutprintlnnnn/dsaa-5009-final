@@ -14,6 +14,13 @@ Dataset: **DialogSum**
 
 ## Environment Setup
 
+### Apple Silicon / Mac M4 Notes
+- 当前项目默认以 Apple Silicon 设备为主要训练环境。
+- CP-05 训练 smoke test 优先使用 `mps`，若不可用则自动回退到 `cpu`。
+- 当前建议优先运行的小规模验证脚本：
+  - `PYTHONPATH=. python scripts/check_training_step.py`
+- 训练 smoke test 已按 Mac 友好配置收紧：更小 batch、更短 max length、更保守 learning rate。
+
 ### 1. Create virtual environment
 ```bash
 python3 -m venv .venv

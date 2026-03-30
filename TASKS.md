@@ -6,7 +6,7 @@
 ---
 
 ## In Progress
-- [ ] 开始 CP-05 单步训练验证
+- [ ] 开始 CP-05 单步训练验证（Mac M4 / MPS 适配）
 - [x] 创建基础配置文件
 - [ ] 补充训练 smoke test
 
@@ -81,3 +81,4 @@
 - 当前计算资源：T4 16G
 - 优先顺序：先跑通 FLAN-T5 baseline，再扩展到 Gemma / Llama / Qwen
 - 先保证 pipeline 可运行，再考虑优化实验
+- GPU 代码默认使用纯 Python 脚本并提交到 GitHub 仓库；在有 GPU 的机器上通过 `git pull` 执行，不再默认依赖 Colab / notebook。
