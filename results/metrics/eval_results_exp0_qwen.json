@@ -1,0 +1,11 @@
+{
+  "experiment": "exp0_qwen",
+  "split": "test",
+  "num_samples": 500,
+  "rouge": {
+    "rouge1": 42.21,
+    "rouge2": 15.97,
+    "rougeL": 34.31,
+    "rougeLsum": 34.41
+  }
+}

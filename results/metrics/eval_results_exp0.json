@@ -1,0 +1,11 @@
+{
+  "experiment": "exp0",
+  "split": "test",
+  "num_samples": 200,
+  "rouge": {
+    "rouge1": 26.87,
+    "rouge2": 8.67,
+    "rougeL": 23.13,
+    "rougeLsum": 23.24
+  }
+}

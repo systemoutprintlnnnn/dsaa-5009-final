@@ -5,8 +5,9 @@ from __future__ import annotations
 from dataclasses import dataclass, asdict
 from typing import Dict, List
 
+import torch
 from peft import LoraConfig, TaskType, get_peft_model
-from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
+from transformers import AutoModelForSeq2SeqLM, AutoModelForCausalLM, AutoTokenizer
 
 SPECIAL_TOKENS = [
     "<len_SHORT>",
@@ -15,6 +16,10 @@ SPECIAL_TOKENS = [
     "[SUMMARIZE]",
     "[TOPIC]",
 ]
+
+# LoRA target modules per architecture
+FLAN_T5_TARGET_MODULES = ["q", "v"]
+QWEN_TARGET_MODULES = ["q_proj", "v_proj"]
 
 
 @dataclass(frozen=True)
@@ -88,6 +93,57 @@ def prepare_model(config: ModelConfig | None = None):
         "total_parameters": total_params,
         "trainable_ratio": round(trainable_params / total_params, 6) if total_params else 0.0,
         "config": asdict(config),
+    }
+
+    return tokenizer, peft_model, report
+
+
+def prepare_causal_model(config: ModelConfig | None = None):
+    """Prepare a decoder-only causal LM (e.g. Qwen) with LoRA."""
+    config = config or ModelConfig(
+        model_name="Qwen/Qwen3.5-0.8B",
+        target_modules=QWEN_TARGET_MODULES,
+    )
+
+    tokenizer = AutoTokenizer.from_pretrained(config.model_name, padding_side="left")
+    if tokenizer.pad_token is None:
+        tokenizer.pad_token = tokenizer.eos_token
+
+    added = tokenizer.add_tokens(config.resolved_special_tokens())
+
+    model = AutoModelForCausalLM.from_pretrained(
+        config.model_name,
+        dtype=torch.bfloat16,
+    )
+    model.resize_token_embeddings(len(tokenizer))
+
+    lora_cfg = LoraConfig(
+        r=config.lora_rank,
+        lora_alpha=config.lora_alpha,
+        target_modules=config.resolved_target_modules(),
+        lora_dropout=config.lora_dropout,
+        bias="none",
+        task_type=TaskType.CAUSAL_LM,
+    )
+    peft_model = get_peft_model(model, lora_cfg)
+
+    trainable_params = sum(p.numel() for p in peft_model.parameters() if p.requires_grad)
+    total_params = sum(p.numel() for p in peft_model.parameters())
+
+    report = {
+        "model_name": config.model_name,
+        "model_type": "causal",
+        "added_tokens": added,
+        "special_tokens": config.resolved_special_tokens(),
+        "lora": {
+            "rank": config.lora_rank,
+            "alpha": config.lora_alpha,
+            "dropout": config.lora_dropout,
+            "target_modules": config.resolved_target_modules(),
+        },
+        "trainable_parameters": trainable_params,
+        "total_parameters": total_params,
+        "trainable_ratio": round(trainable_params / total_params, 6) if total_params else 0.0,
     }
 
     return tokenizer, peft_model, report

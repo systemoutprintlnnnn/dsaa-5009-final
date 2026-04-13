@@ -1,0 +1,55 @@
+{
+  "generated": "make_figures.py",
+  "flan_t5_base": {
+    "model": "google/flan-t5-base (220M)",
+    "train_samples": 12460,
+    "train_epochs": 10,
+    "note": "Full dataset, full training",
+    "exp0_baseline": {
+      "n": 1500,
+      "rouge1": 30.39,
+      "rouge2": 11.3,
+      "rougeL": 25.74
+    },
+    "exp1_length_ctrl": {
+      "n": 1500,
+      "rouge1": 30.94,
+      "rouge2": 11.67,
+      "rougeL": 26.02,
+      "length_acc": 47.8
+    },
+    "exp1_multi_task": {
+      "n": 1500,
+      "rouge1": 30.94,
+      "rouge2": 11.68,
+      "rougeL": 26.05,
+      "length_acc": 47.8
+    }
+  },
+  "qwen3_5_0_8b": {
+    "model": "Qwen/Qwen3.5-0.8B (753M)",
+    "train_samples": 300,
+    "train_epochs": 5,
+    "note": "Reduced dataset due to MPS linear-attention fallback (~8s/step)",
+    "exp0_baseline": {
+      "n": 500,
+      "rouge1": 42.21,
+      "rouge2": 15.97,
+      "rougeL": 34.31
+    },
+    "exp1_length_ctrl": {
+      "n": 500,
+      "rouge1": 41.09,
+      "rouge2": 15.37,
+      "rougeL": 33.41,
+      "length_acc": 68.2
+    },
+    "exp1_multi_task": {
+      "n": 500,
+      "rouge1": 42.24,
+      "rouge2": 16.04,
+      "rougeL": 34.29,
+      "length_acc": 74.2
+    }
+  }
+}

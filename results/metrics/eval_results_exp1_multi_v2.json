@@ -1,0 +1,16 @@
+{
+  "experiment": "exp1_multi",
+  "split": "test",
+  "num_samples": 1500,
+  "rouge": {
+    "rouge1": 30.94,
+    "rouge2": 11.68,
+    "rougeL": 26.05,
+    "rougeLsum": 26.05
+  },
+  "length_accuracy": 0.478,
+  "length_mae": 31.87,
+  "length_accuracy_short": 0.7645,
+  "length_accuracy_medium": 0.2826,
+  "length_accuracy_long": 0.197
+}
