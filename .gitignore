@@ -2,6 +2,19 @@
 __pycache__/
 *.py[cod]
 *.so
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.tox/
+.nox/
+.coverage
+coverage.xml
+htmlcov/
+build/
+dist/
+*.egg-info/
+.eggs/
+pip-wheel-metadata/
 
 # Virtual environment
 .venv/
@@ -10,12 +23,34 @@ venv/
 # macOS
 .DS_Store
 
-# Logs / checkpoints
+# Logs
 logs/
 *.log
 
 # Jupyter
 .ipynb_checkpoints/
 
+# Local workspace state
+.claude/
+.openclaw/
+
+# ML / training artifacts
+results/models/
+checkpoints/
+outputs/
+runs/
+wandb/
+mlruns/
+lightning_logs/
+*.ckpt
+*.pt
+*.pth
+*.safetensors
+pytorch_model*.bin
+adapter_model*.bin
+tf_model*.h5
+
 # Misc
 .env
+.env.*
+!.env.example
