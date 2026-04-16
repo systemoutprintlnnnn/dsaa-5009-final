@@ -337,13 +337,6 @@ Exp1M Multi-Task & \textbf{34.66} & \textbf{14.28} & \textbf{29.33} & \textbf{61
 \end{tabular}
 \end{table}
 
-\begin{figure}[t]
-  \centering
-  \includegraphics[width=\linewidth]{../results/figures/flan_rouge_comparison.png}
-  \caption{ROUGE scores across three FLAN-T5-base experiments on the DialogSum test set ($n = 1{,}500$, LoRA $r{=}16$, 10 epochs).}
-  \label{fig:flan-rouge}
-\end{figure}
-
 \subsection{RQ1: Length Control Effectiveness}
 
 Natural language length instructions consistently produce above-chance length accuracy across both architectures and all data regimes:
@@ -403,13 +396,6 @@ The SHORT bucket benefits most (v3: 77.2\% $\to$ 85.8\%, +8.6\%), followed by ME
 
 The divergence between architectures suggests that decoder-only models benefit more from multi-task regularization, possibly because they rely more heavily on task-prefix semantics---whereas FLAN-T5's encoder-decoder bottleneck already constrains sequence representation.
 
-\begin{figure}[t]
-  \centering
-  \includegraphics[width=\linewidth]{../results/figures/length_accuracy.png}
-  \caption{Per-bucket length control accuracy for FLAN-T5-base, comparing single-task (Exp1) and multi-task (Exp1M) settings.}
-  \label{fig:length-accuracy}
-\end{figure}
-
 \subsection{RQ3: Cross-Architecture Comparison}
 
 \begin{table}[t]
@@ -437,13 +423,6 @@ Two factors may contribute to this structural advantage:
   \item \textbf{Pre-training scale}: Qwen3.5-0.8B has been pre-trained on a much larger and more diverse corpus than FLAN-T5-base, giving it stronger priors for following natural language instructions.
   \item \textbf{Autoregressive generation and length following}: Causal LM training requires the model to predict each token given all previous tokens, which may make the model more sensitive to length-related instructions embedded earlier in the prompt. Encoder-decoder models encode the entire dialogue before decoding, which may dilute the influence of length instructions in the encoded representation.
 \end{enumerate}
-
-\begin{figure}[t]
-  \centering
-  \includegraphics[width=\linewidth]{../results/figures/cross_model_rougeL.png}
-  \caption{Cross-model ROUGE-L comparison (FLAN-T5: $n{=}1{,}500$; Qwen: $n{=}500$).}
-  \label{fig:cross-rouge}
-\end{figure}
 
 % ── 6. Discussion ─────────────────────────────────────────────────────
 \section{Discussion}

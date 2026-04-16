@@ -276,7 +276,7 @@ The strong SHORT accuracy (76.5% for FLAN-T5, 68.0% for Qwen) and weak LONG accu
 
 The MEDIUM bucket shows an interesting pattern: FLAN-T5 is poor (28.3%) while Qwen handles it much better (74.7%–82.1%). Since MEDIUM is the dominant bucket, FLAN-T5 likely defaults to generating text in its preferred length range regardless of instruction, whereas Qwen's stronger instruction-following capability allows more precise control.
 
-### 6.3 Hardware Limitations and Reproducibility
+### 6.3 Hardware Limitations and Full-Dataset Validation
 
 The initial Qwen experiments were constrained by Apple MPS hardware. Training on 300 samples (2.4% of the full dataset) was sufficient to demonstrate cross-architecture trends but raised questions about scalability. Two specific issues on Apple MPS:
 
@@ -338,18 +338,6 @@ We proposed and evaluated a framework for length-controllable dialogue summariza
 
 ---
 
-## References
-
-- Chen, Y., et al. (2021). DialogSum: A Real-Life Scenario Dialogue Summarization Dataset. *ACL-IJCNLP Findings*.
-- Chung, H. W., et al. (2022). Scaling Instruction-Finetuned Language Models. *arXiv:2210.11416*.
-- Fan, A., et al. (2018). Controllable Abstractive Summarization. *ACL Workshop on New Frontiers in Summarization*.
-- Hu, E. J., et al. (2022). LoRA: Low-Rank Adaptation of Large Language Models. *ICLR 2022*.
-- Kikuchi, Y., et al. (2016). Controlling Output Length in Neural Encoder-Decoders. *EMNLP 2016*.
-- Liu, X., et al. (2019). Multi-Task Deep Neural Networks for Natural Language Understanding. *ACL 2019*.
-- Raffel, C., et al. (2020). Exploring the Limits of Transfer Learning with a Unified Text-to-Text Transformer. *JMLR*.
-
----
-
 ## Appendix: Experiment Configuration Summary
 
 **FLAN-T5-base (google/flan-t5-base)**
@@ -369,8 +357,3 @@ We proposed and evaluated a framework for length-controllable dialogue summariza
 
 **Bucket definitions (by reference summary word count)**
 - SHORT: 5–15 words; MEDIUM: 16–35 words; LONG: ≥36 words
-
-**Evaluation figures**
-- `results/figures/flan_rouge_comparison.png`: ROUGE comparison across FLAN-T5 experiments
-- `results/figures/length_accuracy.png`: Per-bucket length accuracy comparison
-- `results/figures/cross_model_rougeL.png`: Cross-model ROUGE-L comparison
