@@ -1,0 +1,60 @@
+{
+  "exp0_qwen_full": {
+    "status": "evaluated",
+    "updated": "2026-04-14 04:11:30",
+    "rouge1": 36.35,
+    "rougeL": 30.31
+  },
+  "exp1_qwen_full": {
+    "status": "evaluated",
+    "updated": "2026-04-14 06:04:04",
+    "rouge1": 35.41,
+    "rougeL": 30.08
+  },
+  "exp1_multi_qwen_full": {
+    "status": "evaluated",
+    "updated": "2026-04-14 07:07:18",
+    "rouge1": 34.71,
+    "rougeL": 29.41
+  },
+  "hparam_search": {
+    "status": "complete",
+    "updated": "2026-04-16",
+    "experiments": 12,
+    "dimensions": ["LoRA modules", "learning rate", "epochs", "rank", "prompt format", "batch size"],
+    "best_config": {
+      "modules": "q_proj, v_proj",
+      "lr": "5e-5",
+      "epochs": 5,
+      "rank": 16,
+      "alpha": 32,
+      "effective_bs": 2,
+      "prompt": "simple"
+    },
+    "best_rougeL": 25.84,
+    "best_experiment": "B1_bs2",
+    "train_samples": 150,
+    "eval_samples": 300
+  },
+  "v3_full_dataset": {
+    "status": "complete",
+    "updated": "2026-04-16",
+    "device": "A100 80GB CUDA",
+    "config": {
+      "modules": "q_proj, v_proj",
+      "lr": "5e-5",
+      "epochs": 5,
+      "rank": 16,
+      "alpha": 32,
+      "batch_size": 2,
+      "grad_accum": 1,
+      "effective_bs": 2,
+      "max_target": 128
+    },
+    "results": {
+      "exp0_qwen_v3": {"rouge1": 36.01, "rouge2": 14.87, "rougeL": 30.21, "train_samples": 12460, "train_time_min": 99.2},
+      "exp1_qwen_v3": {"rouge1": 34.43, "rouge2": 14.47, "rougeL": 29.22, "length_acc": 0.574, "train_samples": 12460, "train_time_min": 95.9},
+      "exp1_multi_qwen_v3": {"rouge1": 34.66, "rouge2": 14.28, "rougeL": 29.33, "length_acc": 0.612, "train_samples": 24920, "train_time_min": 194.7}
+    }
+  }
+}

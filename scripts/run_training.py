@@ -36,7 +36,7 @@ from transformers import (
 )
 
 from src.data.preprocessing import BucketConfig, get_length_bucket
-from src.models.load_model import SPECIAL_TOKENS, QWEN_TARGET_MODULES, build_lora_config
+from src.models.load_model import QWEN_TARGET_MODULES
 from peft import get_peft_model, LoraConfig, TaskType
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
@@ -89,6 +89,28 @@ EXPERIMENTS = {
         "use_length_tokens": True,
         "multitask": True,
         "output_dir": "results/models/exp1_multi_qwen",
+        "model_type": "causal",
+        "default_model": "Qwen/Qwen3.5-0.8B",
+    },
+    # ── Qwen full-dataset variants ──
+    "exp0_qwen_full": {
+        "use_length_tokens": False,
+        "multitask": False,
+        "output_dir": "models/exp0_qwen_full",
+        "model_type": "causal",
+        "default_model": "Qwen/Qwen3.5-0.8B",
+    },
+    "exp1_qwen_full": {
+        "use_length_tokens": True,
+        "multitask": False,
+        "output_dir": "models/exp1_qwen_full",
+        "model_type": "causal",
+        "default_model": "Qwen/Qwen3.5-0.8B",
+    },
+    "exp1_multi_qwen_full": {
+        "use_length_tokens": True,
+        "multitask": True,
+        "output_dir": "models/exp1_multi_qwen_full",
         "model_type": "causal",
         "default_model": "Qwen/Qwen3.5-0.8B",
     },
@@ -154,12 +176,14 @@ def preprocess_dataset(dataset_split, tokenizer, exp_cfg, max_input, max_target)
             max_length=max_input,
             truncation=True,
         )
-        labels = tokenizer(
-            text_target=examples["target"],
-            max_length=max_target if examples["task"][0] == "summarize" else 16,
-            truncation=True,
-        )
-        model_inputs["labels"] = labels["input_ids"]
+        # Per-sample max_length: summarize targets get full budget,
+        # topic targets are capped at 16 tokens.
+        all_label_ids = []
+        for target_text, task in zip(examples["target"], examples["task"]):
+            mt = max_target if task == "summarize" else 16
+            enc = tokenizer(text_target=target_text, max_length=mt, truncation=True)
+            all_label_ids.append(enc["input_ids"])
+        model_inputs["labels"] = all_label_ids
         return model_inputs
 
     from datasets import Dataset
@@ -330,12 +354,8 @@ def main():
     if model_type == "seq2seq":
         logger.info(f"Loading seq2seq model: {model_name}")
         tokenizer = AutoTokenizer.from_pretrained(model_name)
-        if exp_cfg["use_length_tokens"]:
-            num_added = tokenizer.add_tokens(SPECIAL_TOKENS)
-            logger.info(f"Added {num_added} special tokens")
 
         model = AutoModelForSeq2SeqLM.from_pretrained(model_name)
-        model.resize_token_embeddings(len(tokenizer))
 
         lora_cfg = build_lora_config_from_args(args)
         model = get_peft_model(model, lora_cfg)
@@ -384,12 +404,8 @@ def main():
         tokenizer = AutoTokenizer.from_pretrained(model_name, padding_side="right")
         if tokenizer.pad_token is None:
             tokenizer.pad_token = tokenizer.eos_token
-        if exp_cfg["use_length_tokens"]:
-            num_added = tokenizer.add_tokens(SPECIAL_TOKENS)
-            logger.info(f"Added {num_added} special tokens")
 
         model = AutoModelForCausalLM.from_pretrained(model_name, dtype=torch.bfloat16)
-        model.resize_token_embeddings(len(tokenizer))
 
         if args.gradient_checkpointing:
             model.gradient_checkpointing_enable()

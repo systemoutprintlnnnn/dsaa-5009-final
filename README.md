@@ -147,26 +147,43 @@ Expected output:
 ---
 
 ## 6. Current Verified Progress
-### Completed checkpoints
-- `CP-01` Project skeleton → **PASS**
-- `CP-02` Data analysis and length bucket validation → **PASS**
-- `CP-03` Multi-task data pipeline validation → **PASS**
-- `CP-04` Model loading verification → **PASS**
+### Completed checkpoints (CP-01 ~ CP-17)
+- `CP-01` ~ `CP-10` FLAN-T5 baseline + length control + multi-task → **PASS**
+- `CP-11` ~ `CP-13` Qwen3.5-0.8B training (baseline, length control, multi-task) → **PASS**
+- `CP-14` ~ `CP-15` Full evaluation (Qwen 500 samples, FLAN-T5 1500 samples) → **PASS**
+- `CP-16` Hyperparameter systematic search (12 experiments, 6 ablation dimensions) → **PASS**
+- `CP-17` Qwen full-dataset training on A100 with optimal config → **PASS**
 
-### Current focus
-- `CP-05` One-batch training smoke test
+### Best results
+| Model | Experiment | ROUGE-1 | ROUGE-L | Length Acc | Samples | Device |
+|-------|-----------|:-------:|:-------:|:----------:|:-------:|--------|
+| FLAN-T5-base | Exp1_multi | 30.94 | 26.05 | 47.8% | 12,460 | Mac M4 |
+| Qwen3.5-0.8B | Exp0 (300) | 42.21 | **34.31** | — | 300 | Mac M4 |
+| Qwen3.5-0.8B | Exp1_multi (600) | 42.24 | 34.29 | **74.2%** | 600 | Mac M4 |
+| Qwen3.5-0.8B | Exp0 Full (v3) | 36.01 | 30.21 | — | 12,460 | A100 |
+| Qwen3.5-0.8B | Exp1 Multi Full (v3) | 34.66 | 29.33 | 61.2% | 24,920 | A100 |
+
+### Optimal Qwen LoRA config (from hparam search)
+| Parameter | Value |
+|-----------|-------|
+| LoRA modules | q_proj, v_proj (2) |
+| Rank / Alpha | 16 / 32 |
+| Learning rate | 5e-5 |
+| Epochs | 5 |
+| Effective batch size | 2 |
+| Prompt format | Simple text |
 
 ---
 
 ## 7. Current Artifacts
 Existing useful outputs:
-- `results/metrics/data_stats.json`
-- `results/metrics/length_distribution.png`
-- `results/metrics/multitask_samples.json`
-- `results/metrics/model_check_flan.json`
-
-Target next artifact:
-- `results/metrics/training_smoke_test.json`
+- `results/metrics/` — FLAN-T5 evaluation results
+- `results/local_validation/` — Qwen evaluation results (v2)
+- `results/exp*_qwen_full/` — Qwen evaluation results (v2, 300 samples)
+- `results/exp*_qwen_v3/` — Qwen full-dataset results (v3, 12,460 samples, A100)
+- `results/hparam_search/` — 12 hyperparameter ablation experiments
+- `docs/hparam_exploration.md` — Complete hyperparameter search documentation
+- `report.md` / `report/main.tex` — Final report
 
 ---
 
@@ -231,13 +248,7 @@ If you are an AI agent entering this repository, do this first:
 ---
 
 ## 11. Recommended Next Action
-If you want to continue the project right now, the best next command is:
-
-```bash
-PYTHONPATH=. python scripts/check_training_step.py
-```
-
-If this succeeds and produces:
-- `results/metrics/training_smoke_test.json`
-
-then `CP-05` can move toward acceptance.
+All planned experiments and documentation are complete. Potential future work:
+- Controlled full-dataset training with 6 LoRA modules (to deconfound data size vs module count)
+- Bucket-stratified sampling for better LONG accuracy
+- Extension to other decoder-only models (Llama, Gemma)

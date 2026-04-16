@@ -1,0 +1,11 @@
+{
+  "experiment": "exp1_multi_qwen_full",
+  "n": 500,
+  "rouge1": 34.66,
+  "rouge2": 14.28,
+  "rougeL": 29.33,
+  "length_acc": 0.612,
+  "len_acc_short": 0.8579,
+  "len_acc_medium": 0.5018,
+  "len_acc_long": 0.0
+}

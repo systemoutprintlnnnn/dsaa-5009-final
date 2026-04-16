@@ -1,0 +1,25 @@
+{
+  "name": "B1_bs2",
+  "prompt_format": "baseline",
+  "lora_modules": [
+    "q_proj",
+    "v_proj"
+  ],
+  "lora_r": 16,
+  "lora_alpha": 32,
+  "lr": 5e-05,
+  "epochs": 5,
+  "batch_size": 2,
+  "grad_accum": 1,
+  "effective_bs": 2,
+  "beam": 1,
+  "train_loss": 1.3127,
+  "train_time_sec": 2966.9,
+  "train_samples": 150,
+  "eval_samples": 300,
+  "rouge1": 32.39,
+  "rouge2": 10.59,
+  "rougeL": 25.84,
+  "avg_pred_len": 20.7,
+  "avg_ref_len": 17.7
+}

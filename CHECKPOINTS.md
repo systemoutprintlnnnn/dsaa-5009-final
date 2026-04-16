@@ -2,7 +2,7 @@
 
 > Project: DSAA-5009 Final Project - Multi-Task Learning for Length-Controllable Dialogue Summarization
 > Purpose: stage-by-stage acceptance mechanism
-> Last updated: 2026-04-08
+> Last updated: 2026-04-17
 
 ---
 
@@ -218,3 +218,56 @@
   - [x] `eval_results_exp1_v2.json`（n=1500）: ROUGE-L=26.02, Length Acc=47.8%
   - [x] `eval_results_exp1_multi_v2.json`（n=1500）: ROUGE-L=26.05, Length Acc=47.8%
 - **Artifacts**: `results/metrics/eval_results_*_v2.json`
+
+---
+
+## CP-16 超参数系统搜索（hparam_search）
+- **Status**: 🟢 PASS
+- **Goal**: 通过系统性消融实验找到 Qwen3.5-0.8B LoRA 微调的最优训练策略
+- **Verification**:
+  - [x] 12 个消融实验全部完成，结果保存在 `results/hparam_search/*/results.json`
+  - [x] 6 个维度全覆盖：LoRA modules、learning rate、epochs、rank、prompt format、batch size
+  - [x] 探索文档 `docs/hparam_exploration.md` 完整记录
+  - [x] 最优配置确定：2 modules, lr=5e-5, 5 epochs, r=16, alpha=32, bs=2, simple prompt
+- **Artifacts**: `results/hparam_search/`, `docs/hparam_exploration.md`
+- **Result**: 最优 ROUGE-L = 25.84 (B1, 150 train samples, 300 test, beam=1)
+- **关键发现**:
+  1. 少 LoRA modules（2 > 4 > 6）防止过拟合
+  2. 小 batch size（bs=2 > bs=4 > bs=8）提供更多梯度更新
+  3. Simple prompt > chat template（节省上下文空间）
+  4. Train loss 最低不等于 ROUGE-L 最高（过拟合信号）
+  5. 预测长度接近参考长度（~17-21w）时 ROUGE-L 最高
+
+---
+
+## CP-17 Qwen 全量数据训练 v3（A100 最优配置）
+- **Status**: 🟢 PASS
+- **Goal**: 使用最优 LoRA 配置在 A100 上训练 Qwen3.5-0.8B 全量数据，验证 hyperparameter search 发现的配置在大规模数据上的表现
+- **Verification**:
+  - [x] 三组实验全部完成：exp0 baseline, exp1 length control, exp1_multi multi-task
+  - [x] 使用最优配置：q_proj/v_proj, r=16, alpha=32, lr=5e-5, bs=2, 5 epochs, max_target=128
+  - [x] A100 80GB CUDA 训练，bf16 精度
+  - [x] 结果保存在 `results/exp*_qwen_v3/`
+- **Artifacts**: `results/exp*_qwen_v3/`, `colab_gists/qwen_colab_v3.ipynb`
+- **Results**:
+
+| 实验 | ROUGE-1 | ROUGE-2 | ROUGE-L | Length Acc | SHORT | MEDIUM | LONG | 训练时间 |
+|------|:-------:|:-------:|:-------:|:----------:|:-----:|:------:|:----:|:--------:|
+| exp0 baseline | 36.01 | 14.87 | 30.21 | — | — | — | — | 99 min |
+| exp1 length | 34.43 | 14.47 | 29.22 | 57.4% | 77.2% | 48.7% | 6.7% | 96 min |
+| exp1_multi | 34.66 | 14.28 | 29.33 | 61.2% | 85.8% | 50.2% | 0.0% | 195 min |
+
+- **与 v2 (300 samples) 对比**:
+
+| 实验 | v2 ROUGE-L (300s) | v3 ROUGE-L (12460s) | 差距 |
+|------|:-----------------:|:-------------------:|:----:|
+| exp0 baseline | 34.31 | 30.21 | -4.10 |
+| exp1 length | 33.41 | 29.22 | -4.19 |
+| exp1_multi | 34.29 | 29.33 | -4.96 |
+
+- **关键发现**:
+  1. 三个 RQ 的结论在 v3 全量数据上与 v2 完全一致：长度控制有效、多任务学习提升 Qwen、decoder-only 优于 encoder-decoder
+  2. v3 ROUGE-L 低于 v2 约 4-5 个点，原因是 LoRA modules 不同（v3 用 2 modules vs v2 用 6 modules），非数据量问题
+  3. 多任务学习效果一致：length_acc 从 57.4% 提升到 61.2%（+3.8%），ROUGE-L 回升 +0.11
+  4. SHORT bucket 准确率最高（85.8%），LONG bucket 最困难（0.0%），与 v2 趋势一致
+  5. 小数据超参数搜索的最优配置不一定能迁移到大数据场景

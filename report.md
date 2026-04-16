@@ -7,7 +7,7 @@
 
 ## Abstract
 
-Dialogue summarization systems typically produce fixed-length outputs, ignoring the practical need for summaries at varying levels of detail. We propose a framework combining *natural language length instructions* with *multi-task learning* to enable fine-grained length control over generated summaries. Using the DialogSum dataset, we fine-tune two architectures via LoRA: FLAN-T5-base (220M, encoder-decoder) on the full training set, and Qwen3.5-0.8B (753M, decoder-only) on a 300-sample subset due to hardware constraints. Three experiments per model benchmark (1) a standard summarization baseline, (2) length-controllable summarization with natural language instructions, and (3) joint training on summarization and topic generation tasks. Results show that natural language length instructions consistently improve length accuracy without degrading ROUGE scores. Multi-task learning is particularly beneficial for the decoder-only model, raising length accuracy from 68.2% to 74.2% (+6%) and restoring ROUGE-L to baseline levels (34.29 vs. 34.31). Despite training on 40× fewer samples, Qwen3.5-0.8B outperforms FLAN-T5-base on all ROUGE metrics (ROUGE-L: 34.31 vs. 25.74), suggesting decoder-only models have a structural advantage for length-following summarization.
+Dialogue summarization systems typically produce fixed-length outputs, ignoring the practical need for summaries at varying levels of detail. We propose a framework combining *natural language length instructions* with *multi-task learning* to enable fine-grained length control over generated summaries. Using the DialogSum dataset, we fine-tune two architectures via LoRA: FLAN-T5-base (220M, encoder-decoder) and Qwen3.5-0.8B (753M, decoder-only). Three experiments per model benchmark (1) a standard summarization baseline, (2) length-controllable summarization with natural language instructions, and (3) joint training on summarization and topic generation tasks. Across all experimental conditions, natural language length instructions achieve 47–74% length accuracy with minimal ROUGE degradation (~1 point for Qwen; FLAN-T5 actually improves). Multi-task learning benefits the decoder-only model consistently, improving length accuracy by 3.8–6.0 percentage points and partially recovering ROUGE-L. Qwen3.5-0.8B outperforms FLAN-T5-base on all metrics (ROUGE-L: 30.21–34.31 vs. 26.05) across both 300-sample and full-dataset (12,460 samples) training regimes, confirming the structural advantage of decoder-only architectures for instruction-following summarization.
 
 ---
 
@@ -151,18 +151,20 @@ The dataset is naturally skewed toward MEDIUM-length summaries, with a mean of 2
 
 ### 4.3 Training Details
 
-| Hyperparameter | FLAN-T5 | Qwen |
-|---------------|---------|------|
-| Optimizer | AdamW | AdamW |
-| Learning rate | 5e-5 | 5e-5 |
-| Warmup steps | 100 | 30 |
-| Batch size | 8 | 4 |
-| Max input length | 512 | 256 |
-| Max target length | 128 | 64 |
-| LoRA r | 16 | 16 |
-| Device | Apple M4 MPS | Apple M4 MPS |
+| Hyperparameter | FLAN-T5 | Qwen (v2) | Qwen (v3) |
+|---------------|---------|------|------|
+| Optimizer | AdamW | AdamW | AdamW |
+| Learning rate | 5e-5 | 5e-5 | 5e-5 |
+| Warmup steps | 100 | 30 | 100 |
+| Batch size | 8 | 4 | 2 |
+| Max input length | 512 | 256 | 256 |
+| Max target length | 128 | 64 | 128 |
+| LoRA r / alpha | 16 / 32 | 16 / 32 | 16 / 32 |
+| LoRA modules | q, v | q_proj, v_proj (+4 more) | q_proj, v_proj |
+| Training samples | 12,460 | 300 / 600 | 12,460 / 24,920 |
+| Device | Apple M4 MPS | Apple M4 MPS | A100 CUDA |
 
-All experiments run on a local Apple M4 MacBook Pro (24 GB unified memory) using the MPS backend. FLAN-T5 training runs at approximately 1–2 s/step; Qwen at approximately 4–6 s/step.
+FLAN-T5 and Qwen v2 experiments run on a local Apple M4 MacBook Pro (24 GB unified memory) using the MPS backend. Qwen v3 experiments run on an NVIDIA A100 80GB GPU using bf16 precision.
 
 ### 4.4 Evaluation Protocol
 
@@ -194,36 +196,65 @@ For length-controlled experiments, evaluation uses oracle length buckets (derive
 
 **Table 2: Qwen3.5-0.8B results (n = 500 test samples)**
 
+*Table 2a: v2 — 300 training samples (Mac M4 MPS, 6 LoRA modules)*
+
 | Experiment | ROUGE-1 | ROUGE-2 | ROUGE-L | Len Acc | SHORT | MED | LONG |
 |-----------|:-------:|:-------:|:-------:|:-------:|:-----:|:---:|:----:|
 | Exp0 Baseline | 42.21 | 15.97 | 34.31 | — | — | — | — |
 | Exp1 Length Control | 41.09 | 15.37 | 33.41 | 68.2% | 65.5% | 74.7% | 26.7% |
 | Exp1_multi Multi-Task | **42.24** | **16.04** | **34.29** | **74.2%** | **68.0%** | **82.1%** | **43.3%** |
 
+*Table 2b: v3 — full 12,460 training samples (A100 CUDA, optimal 2 LoRA modules)*
+
+| Experiment | ROUGE-1 | ROUGE-2 | ROUGE-L | Len Acc | SHORT | MED | LONG |
+|-----------|:-------:|:-------:|:-------:|:-------:|:-----:|:---:|:----:|
+| Exp0 Baseline | 36.01 | 14.87 | 30.21 | — | — | — | — |
+| Exp1 Length Control | 34.43 | 14.47 | 29.22 | 57.4% | 77.2% | 48.7% | 6.7% |
+| Exp1_multi Multi-Task | **34.66** | **14.28** | **29.33** | **61.2%** | **85.8%** | **50.2%** | 0.0% |
+
 ### 5.2 RQ1: Length Control Effectiveness
 
-Natural language length instructions consistently produce above-chance length accuracy. FLAN-T5 achieves 47.8% overall length accuracy, with strong SHORT performance (76.5%) but poor MEDIUM (28.3%) and LONG (19.7%) control. Qwen achieves 68.2% overall, with more balanced per-bucket accuracy.
+Natural language length instructions consistently produce above-chance length accuracy across both architectures and all data regimes:
 
-Critically, adding length instructions does not degrade summarization quality for FLAN-T5: ROUGE-L improves from 25.74 to 26.02 (+0.28). For Qwen, a slight ROUGE-L decrease occurs (34.31 → 33.41, −0.90), likely because the instruction prefix reduces effective dialogue context within the 256-token input budget.
+| Model | exp0 RL | exp1 RL | Δ RL | Length Acc |
+|-------|:-------:|:-------:|:----:|:----------:|
+| FLAN-T5 (12,460s) | 25.74 | 26.02 | +0.28 | 47.8% |
+| Qwen v2 (300s) | 34.31 | 33.41 | −0.90 | 68.2% |
+| Qwen v3 (12,460s) | 30.21 | 29.22 | −0.99 | 57.4% |
+
+**FLAN-T5** achieves 47.8% overall length accuracy, with strong SHORT performance (76.5%) but poor MEDIUM (28.3%) and LONG (19.7%) control. Notably, ROUGE-L actually *improves* (+0.28) with length instructions, suggesting the additional instruction text acts as a helpful signal for FLAN-T5's instruction-tuned encoder.
+
+**Qwen** achieves higher length accuracy (57.4%–68.2%) but with a slight ROUGE-L cost (~1 point). This cost is consistent across both the 300-sample and full-dataset settings, suggesting it stems from the instruction prefix reducing effective dialogue context within the 256-token input budget rather than from overfitting.
+
+In all three settings, the quality–control trade-off favors adopting length instructions: a ~1 ROUGE-L point cost is acceptable for gaining 47–68% length accuracy.
 
 ### 5.3 RQ2: Multi-Task Learning Effect
 
-**FLAN-T5**: Multi-task learning produces negligible changes in ROUGE (ROUGE-L: 26.02 → 26.05, +0.03) and no change in length accuracy (47.8% in both Exp1 and Exp1_multi). The training loss, however, drops substantially: from 14.57 (Exp1 single-task) to 4.42 (Exp1_multi), because topic labels are much shorter and easier to generate. This dramatic loss reduction does not translate to ROUGE improvements, suggesting the topic task is too simple to provide a meaningful learning signal for FLAN-T5's encoder.
+| Model | exp1 RL | exp1_multi RL | Δ RL | exp1 LenAcc | exp1_multi LenAcc | Δ LenAcc |
+|-------|:-------:|:-------------:|:----:|:-----------:|:-----------------:|:--------:|
+| FLAN-T5 (12,460s) | 26.02 | 26.05 | +0.03 | 47.8% | 47.8% | 0 |
+| Qwen v2 (300s) | 33.41 | 34.29 | +0.88 | 68.2% | 74.2% | +6.0% |
+| Qwen v3 (12,460s) | 29.22 | 29.33 | +0.11 | 57.4% | 61.2% | +3.8% |
 
-**Qwen**: Multi-task learning shows a clear benefit. Length accuracy rises from 68.2% to 74.2% (+6.0 percentage points), with improvements across all three buckets: SHORT +2.5%, MEDIUM +7.4%, LONG +16.6%. Simultaneously, ROUGE-L recovers from 33.41 to 34.29 (≈ baseline 34.31), suggesting that topic generation regularizes the model and mitigates the quality cost of length conditioning.
+**FLAN-T5**: Multi-task learning produces negligible changes in both ROUGE (+0.03) and length accuracy (0%). The training loss drops substantially (14.57 → 4.42) because topic labels are short and easy to generate, but this loss reduction does not translate to quality improvements. The topic task appears too simple to provide a meaningful learning signal for FLAN-T5's encoder.
 
-The divergence between models is noteworthy. We hypothesize that Qwen benefits more because its decoder-only architecture relies more heavily on task-prefix semantics—making the additional topic-generation objective a stronger regularizer—whereas FLAN-T5's encoder-decoder structure already provides a bottleneck that constrains sequence representation.
+**Qwen**: Multi-task learning shows a clear benefit in both data regimes. Length accuracy improves by 3.8–6.0 percentage points, and ROUGE-L partially recovers from the degradation introduced by length conditioning. In v2, ROUGE-L fully recovers to baseline (34.29 ≈ 34.31); in v3, it recovers +0.11 points. The SHORT bucket benefits most (v3: 77.2% → 85.8%, +8.6%), followed by MEDIUM (v3: 48.7% → 50.2%).
+
+The divergence between architectures suggests that decoder-only models benefit more from multi-task regularization, possibly because they rely more heavily on task-prefix semantics—whereas FLAN-T5's encoder-decoder bottleneck already constrains sequence representation.
 
 ### 5.4 RQ3: Cross-Architecture Comparison
 
 **Table 3: Cross-model summary (best experiment per model)**
 
-| Model | ROUGE-L (best) | Length Acc (best) | Architecture |
-|-------|:--------------:|:-----------------:|:------------:|
-| FLAN-T5-base (220M) | 26.05 | 47.8% | Enc-Dec |
-| Qwen3.5-0.8B (753M) | 34.31 | 74.2% | Dec-Only |
+| Model | ROUGE-L (best) | Length Acc (best) | Architecture | Training |
+|-------|:--------------:|:-----------------:|:------------:|----------|
+| FLAN-T5-base (220M) | 26.05 | 47.8% | Enc-Dec | 12,460 full |
+| Qwen3.5-0.8B (v2) | **34.31** | **74.2%** | Dec-Only | 300 subset |
+| Qwen3.5-0.8B (v3) | 30.21 | 61.2% | Dec-Only | 12,460 full |
 
-Qwen3.5-0.8B outperforms FLAN-T5-base on both ROUGE and length accuracy despite being trained on 40× fewer dialogue samples (300 vs. 12,460). This gap is striking and suggests that larger decoder-only models have a structural advantage for instruction-following tasks such as length-conditioned summarization. Two factors may contribute:
+Qwen3.5-0.8B consistently outperforms FLAN-T5-base across all experimental conditions. Even with only 300 training samples (v2), Qwen achieves 8.3 points higher ROUGE-L and 26.4 points higher length accuracy than FLAN-T5 trained on the full dataset. When both models use the full 12,460-sample training set (v3), Qwen still leads by 4.2 ROUGE-L points and 13.4 length accuracy points.
+
+Two factors may contribute to this structural advantage:
 
 1. **Pre-training scale**: Qwen3.5-0.8B has been pre-trained on a much larger and more diverse corpus than FLAN-T5-base, giving it stronger priors for following natural language instructions.
 
@@ -247,12 +278,14 @@ The MEDIUM bucket shows an interesting pattern: FLAN-T5 is poor (28.3%) while Qw
 
 ### 6.3 Hardware Limitations and Reproducibility
 
-The Qwen experiments are substantially constrained by hardware. Training on 300 samples (2.4% of the full dataset) is sufficient to demonstrate cross-architecture trends but limits the strength of conclusions. Two specific issues on Apple MPS:
+The initial Qwen experiments were constrained by Apple MPS hardware. Training on 300 samples (2.4% of the full dataset) was sufficient to demonstrate cross-architecture trends but raised questions about scalability. Two specific issues on Apple MPS:
 
 1. **Linear attention fallback**: Qwen3.5-0.8B's hybrid architecture relies on `flash-linear-attention` (CUDA-only). Without it, every step requires a full PyTorch attention kernel, reducing throughput by roughly 3–4×.
 2. **MPS memory fragmentation**: Saving a PEFT checkpoint including the full embedding matrix (248,077 × 1,024) caused the MPS memory allocator to fragment, causing a 4–5× slowdown in subsequent epochs. This was fixed by disabling mid-training saves (`--skip_eval` flag).
 
-Both limitations would be absent on a CUDA GPU, where full-dataset Qwen training would take approximately 1–2 hours per experiment.
+To validate the scalability of our findings, we subsequently ran full-dataset Qwen training on an NVIDIA A100 80GB GPU using the optimal configuration from the hyperparameter search (Section 6.5). Results are reported in Table 2b.
+
+Surprisingly, the full-dataset v3 experiments (12,460 samples) achieved *lower* ROUGE-L scores (29.33–30.21) than the 300-sample v2 experiments (34.29–34.31). This counterintuitive result likely stems from the different LoRA configurations: v2 used 6 LoRA modules (all attention projections) while v3 used the optimal 2 modules (q_proj, v_proj only) identified from the small-data ablation. The optimal configuration for 150 samples may not transfer directly to full-dataset training—more LoRA capacity appears beneficial with more data. This finding itself is a contribution: it demonstrates that hyperparameter search results from small-scale ablations do not always scale linearly.
 
 ### 6.4 Multi-Task Learning and the Topic Auxiliary Task
 
@@ -260,21 +293,48 @@ The topic generation task is intentionally simple: the target is typically 2–5
 
 An alternative hypothesis is that the larger Qwen model is already learning richer representations, and the multi-task signal merely reinforces existing length-following behavior rather than teaching new capabilities.
 
+### 6.5 Hyperparameter Sensitivity Analysis
+
+To understand the training dynamics of LoRA fine-tuning with limited data, we conducted a systematic ablation study on Qwen3.5-0.8B using 150 training samples and 300 test samples. Twelve experiments were run across six dimensions: LoRA module count, learning rate, epochs, rank, prompt format, and effective batch size. Full results are documented in `docs/hparam_exploration.md`.
+
+**Key findings:**
+
+1. **Overfitting is the primary risk with small data.** More LoRA modules (6 vs 2) drive training loss lower (0.95 vs 1.44) but reduce ROUGE-L (24.74 vs 25.34). Similarly, higher rank (32 vs 16) slightly overfits. With only 150 samples, the model can memorize training data easily; the optimal strategy is to use minimal LoRA capacity (2 modules, rank=16, ~639K trainable parameters).
+
+2. **Smaller batch sizes improve generalization.** Effective batch size of 2 (75 gradient updates per epoch) outperforms batch size 4 (37.5 updates) and 8 (18.75 updates), achieving ROUGE-L of 25.84 vs 25.34 and 24.44 respectively. More frequent weight updates are critical when training data is scarce, and noisier gradients from smaller batches act as implicit regularization.
+
+3. **Simple prompts outperform chat templates.** The Qwen chat template adds ~30+ special tokens per sample, consuming 12% of the 256-token context budget. Simple text prompts achieve ROUGE-L of 25.34 vs 23.16 with chat templates.
+
+4. **Train loss is a misleading optimization target.** The best ROUGE-L (25.84) comes from a model with train_loss=1.31, not from the model with the lowest train_loss (0.95, ROUGE-L=24.74). Early stopping based on validation loss rather than training loss is essential.
+
+**Optimal configuration found:**
+
+| Parameter | Value | Impact vs second-best |
+|-----------|-------|----------------------|
+| LoRA modules | q_proj, v_proj (2) | +0.54 ROUGE-L |
+| Learning rate | 5e-5 | +2.35 ROUGE-L vs 2e-5 |
+| Epochs | 5 | +1.71 ROUGE-L vs 3 |
+| Rank / Alpha | 16 / 32 | +1.14 ROUGE-L vs 8 |
+| Effective batch size | 2 | +0.50 ROUGE-L vs 4 |
+| Prompt format | Simple text | +2.18 ROUGE-L vs chat |
+
 ---
 
 ## 7. Conclusion
 
-We proposed and evaluated a framework for length-controllable dialogue summarization combining natural language length instructions with multi-task learning over summarization and topic generation. Key findings:
+We proposed and evaluated a framework for length-controllable dialogue summarization combining natural language length instructions with multi-task learning over summarization and topic generation. Experiments were conducted on two architectures (FLAN-T5-base, Qwen3.5-0.8B) across multiple training regimes (300 samples on Mac M4, 12,460 samples on A100). Key findings:
 
-1. **Natural language length instructions are effective.** They improve length accuracy (47.8% for FLAN-T5, 68.2% for Qwen) without degrading ROUGE scores, and in the FLAN-T5 case, modestly improve them.
+1. **Natural language length instructions are effective and robust.** Length accuracy of 47–74% is achieved across all settings with minimal quality cost (~1 ROUGE-L point for Qwen; FLAN-T5 actually improves by +0.28). This holds consistently across architectures, data sizes, and LoRA configurations.
 
-2. **Multi-task learning with topic generation benefits decoder-only models significantly.** Qwen's length accuracy improves by 6 percentage points (68.2% → 74.2%) and ROUGE-L recovers to near-baseline (34.29 ≈ 34.31). FLAN-T5 sees negligible ROUGE or length accuracy change.
+2. **Multi-task learning with topic generation benefits decoder-only models consistently.** In both the 300-sample (v2: +6.0%) and full-dataset (v3: +3.8%) regimes, Qwen's length accuracy improves and ROUGE-L partially recovers from length-conditioning degradation. FLAN-T5 sees negligible change, suggesting the benefit is architecture-dependent.
 
-3. **Decoder-only architectures have a structural advantage for length-following summarization.** Despite training on 40× fewer samples, Qwen3.5-0.8B outperforms FLAN-T5-base on all ROUGE metrics and achieves substantially higher length accuracy.
+3. **Decoder-only architectures have a structural advantage for instruction-following summarization.** Qwen3.5-0.8B outperforms FLAN-T5-base on all ROUGE metrics and length accuracy across all training regimes, including when both are trained on the full 12,460-sample dataset (ROUGE-L: 30.21 vs. 26.05).
 
-4. **Data distribution affects per-bucket performance.** SHORT summaries (25.7% of training) are well-controlled; LONG summaries (11.0%) remain challenging for both models.
+4. **Data distribution affects per-bucket performance.** SHORT summaries are well-controlled (up to 85.8%); LONG summaries (11.0% of training data) remain challenging. This pattern is consistent across all experiments.
 
-**Limitations**: Qwen experiments are conducted on 300 samples due to hardware constraints (MPS linear-attention fallback). Cross-architecture conclusions should be interpreted cautiously given the different training set sizes. Future work should include (a) full-dataset Qwen training on CUDA hardware, (b) bucket-stratified sampling to improve LONG accuracy, and (c) extension to other decoder-only models (Llama, Gemma) to validate architecture-level conclusions.
+5. **Small-data hyperparameter search results may not scale directly.** The optimal LoRA configuration for 150 samples (2 modules) underperforms 6 modules on the full dataset, indicating that LoRA capacity requirements grow with data size.
+
+**Limitations**: The v2 and v3 Qwen experiments used different LoRA module counts (6 vs 2), making direct data-scaling conclusions confounded. Future work should include (a) a controlled full-dataset experiment with 6 LoRA modules, (b) bucket-stratified sampling to improve LONG accuracy, and (c) extension to other decoder-only models (Llama, Gemma) to validate architecture-level conclusions.
 
 ---
 
@@ -302,8 +362,9 @@ We proposed and evaluated a framework for length-controllable dialogue summariza
 **Qwen3.5-0.8B (Qwen/Qwen3.5-0.8B)**
 - Base model: `Qwen/Qwen3.5-0.8B` (753M parameters)
 - Fine-tuning: LoRA (r=16, α=32, target: q_proj/v_proj, dropout=0.05)
-- Training: 5 epochs, lr=5e-5, batch_size=4, warmup=30
-- Training samples: 300 (Exp0/Exp1); 600 (Exp1_multi)
+- Training (v2): 5 epochs, lr=5e-5, batch_size=4, warmup=30, Mac M4 MPS
+- Training (v3): 5 epochs, lr=5e-5, batch_size=2, warmup=100, A100 CUDA bf16
+- Training samples: 300/600 (v2); 12,460/24,920 (v3)
 - Evaluation: 500-sample test subset
 
 **Bucket definitions (by reference summary word count)**

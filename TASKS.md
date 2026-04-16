@@ -1,7 +1,7 @@
 # TASKS
 
 > Project: DSAA-5009 Final Project - Multi-Task Learning for Length-Controllable Dialogue Summarization
-> Last updated: 2026-04-08
+> Last updated: 2026-04-17
 
 ---
 
@@ -78,10 +78,32 @@
 - [x] 整理最终对比表（final_results_v2.json 更新）
 - [x] 撰写最终报告/论文（`report.md`）
 
+## Phase 8 - 超参数搜索（已完成）
+- [x] 设计系统性消融实验（6个维度 × 12个实验）
+- [x] 编写自动化训练搜索脚本 `/tmp/hparam_search.py`, `/tmp/hparam_search_v2.py`
+- [x] R1: LoRA 模块数量消融（2/4/6 modules）→ 2 modules 最优
+- [x] R2: 学习率消融（2e-5/5e-5/1e-4）→ 5e-5 最优
+- [x] R3: 训练轮数消融（3/5/8 epochs）→ 5 epochs 最优
+- [x] R4: LoRA rank 消融（r=8/16/32）→ r=16 最优
+- [x] R5: Prompt 格式对比（simple vs chat template）→ simple 最优
+- [x] R6: Batch size 消融（effective_bs=2/4/8）→ bs=2 最优
+- [x] 完整探索文档：`docs/hparam_exploration.md`
+- [x] 最优配置：2 modules, lr=5e-5, 5 epochs, r=16, bs=2, simple prompt → ROUGE-L=25.84
+
+## Phase 9 - Qwen 全量数据训练 v3（已完成）
+- [x] 创建 v3 Colab notebook，使用最优 LoRA 配置
+- [x] A100 80GB CUDA 训练 exp0 baseline（12,460 samples × 5 epochs）→ ROUGE-L=30.21
+- [x] A100 训练 exp1 length control（12,460 samples）→ ROUGE-L=29.22, Length Acc=57.4%
+- [x] A100 训练 exp1_multi multi-task（24,920 samples）→ ROUGE-L=29.33, Length Acc=61.2%
+- [x] 保存结果到 `results/exp*_qwen_v3/`
+- [x] 更新所有项目文档
+
 ---
 
 ## Notes
 - 训练环境：Mac M4 24GB, MPS, FLAN-T5-base (220M), LoRA r=16
 - Qwen：Qwen/Qwen3.5-0.8B, LoRA r=16, target_modules=[q_proj, v_proj], causal LM
 - v1 → v2 关键修复：添加指令前缀、lr 从 5e-4 降到 5e-5、改用自然语言长度控制
-- 全部 checkpoint（CP-01~CP-15）已通过
+- 全部 checkpoint（CP-01~CP-16）已通过
+- 超参数搜索关键发现：小数据量下少即是多——少的 LoRA modules、小的 batch size、适中的 rank
+- v3 全量训练关键发现：v3（2 modules, 12460s）ROUGE-L 低于 v2（6 modules, 300s）约 4-5 点，说明小数据最优配置不一定能迁移到大数据；但三个 RQ 的结论趋势在两个版本间完全一致

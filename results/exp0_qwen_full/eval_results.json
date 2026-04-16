@@ -1,0 +1,7 @@
+{
+  "experiment": "exp0_qwen_full",
+  "n": 500,
+  "rouge1": 36.35,
+  "rouge2": 15.28,
+  "rougeL": 30.31
+}

@@ -36,6 +36,8 @@ logs/
 
 # ML / training artifacts
 results/models/
+models/
+results_archived/
 checkpoints/
 outputs/
 runs/
@@ -48,7 +50,16 @@ lightning_logs/
 *.safetensors
 pytorch_model*.bin
 adapter_model*.bin
+adapter_model*.safetensors
 tf_model*.h5
+tokenizer.json
+tokenizer_config.json
+chat_template.jinja
+special_tokens_map.json
+generation_config.json
+config.json
+training_args.bin
+README.md
 
 # Misc
 .env

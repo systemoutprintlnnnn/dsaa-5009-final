@@ -1,0 +1,28 @@
+{
+  "name": "H3_6mod",
+  "lora_modules": [
+    "q_proj",
+    "v_proj",
+    "o_proj",
+    "gate_proj",
+    "up_proj",
+    "down_proj"
+  ],
+  "lora_r": 16,
+  "lora_alpha": 32,
+  "lr": 5e-05,
+  "epochs": 5,
+  "batch_size": 2,
+  "grad_accum": 2,
+  "effective_bs": 4,
+  "beam": 1,
+  "train_loss": 0.9525,
+  "train_time_sec": 2417.1,
+  "train_samples": 150,
+  "eval_samples": 300,
+  "rouge1": 30.03,
+  "rouge2": 9.88,
+  "rougeL": 24.74,
+  "avg_pred_len": 15.4,
+  "avg_ref_len": 17.7
+}

@@ -20,7 +20,7 @@ import torch
 from datasets import load_dataset
 from tqdm import tqdm
 from transformers import AutoModelForSeq2SeqLM, AutoModelForCausalLM, AutoTokenizer
-from peft import PeftModel
+from peft import PeftConfig, PeftModel
 
 from src.data.preprocessing import BucketConfig, get_length_bucket
 from src.evaluation.rouge import compute_rouge
@@ -43,6 +43,9 @@ EXPERIMENT_DIRS = {
     "exp0_qwen":      ROOT / "results" / "models" / "exp0_qwen",
     "exp1_qwen":      ROOT / "results" / "models" / "exp1_qwen",
     "exp1_multi_qwen": ROOT / "results" / "models" / "exp1_multi_qwen",
+    "exp0_qwen_full":      ROOT / "models" / "exp0_qwen_full",
+    "exp1_qwen_full":      ROOT / "models" / "exp1_qwen_full",
+    "exp1_multi_qwen_full": ROOT / "models" / "exp1_multi_qwen_full",
 }
 
 MODEL_TYPES = {
@@ -52,9 +55,13 @@ MODEL_TYPES = {
     "exp0_qwen":       "causal",
     "exp1_qwen":       "causal",
     "exp1_multi_qwen": "causal",
+    "exp0_qwen_full":       "causal",
+    "exp1_qwen_full":       "causal",
+    "exp1_multi_qwen_full": "causal",
 }
 
-USE_LENGTH_TOKENS = {"exp1", "exp1_multi", "exp1_qwen", "exp1_multi_qwen"}
+USE_LENGTH_TOKENS = {"exp1", "exp1_multi", "exp1_qwen", "exp1_multi_qwen",
+                     "exp1_qwen_full", "exp1_multi_qwen_full"}
 
 # Must match training script LENGTH_INSTRUCTIONS
 LENGTH_INSTRUCTIONS = {
@@ -160,23 +167,21 @@ def main():
         device = torch.device("cpu")
     logger.info(f"Device: {device}")
 
+    peft_config = PeftConfig.from_pretrained(str(model_dir))
+    base_model_name = peft_config.base_model_name_or_path
+    logger.info(f"Loading base model: {base_model_name}")
+
     if model_type == "causal":
         tokenizer = AutoTokenizer.from_pretrained(str(model_dir), padding_side="left")
         if tokenizer.pad_token is None:
             tokenizer.pad_token = tokenizer.eos_token
-        # Load base model → resize embedding to match saved tokenizer → apply LoRA adapter.
-        # This avoids the "ignore_mismatched_sizes" error when vocab was resized during training.
-        from peft import PeftConfig
-        peft_config = PeftConfig.from_pretrained(str(model_dir))
-        base_model_name = peft_config.base_model_name_or_path
-        logger.info(f"Loading base model: {base_model_name}")
         model = AutoModelForCausalLM.from_pretrained(base_model_name, dtype=torch.bfloat16)
-        model.resize_token_embeddings(len(tokenizer))
-        model = PeftModel.from_pretrained(model, str(model_dir))
-        model = model.merge_and_unload()
     else:
         tokenizer = AutoTokenizer.from_pretrained(str(model_dir))
-        model = AutoModelForSeq2SeqLM.from_pretrained(str(model_dir))
+        model = AutoModelForSeq2SeqLM.from_pretrained(base_model_name)
+
+    model = PeftModel.from_pretrained(model, str(model_dir))
+    model = model.merge_and_unload()
 
     model = model.to(device)
 
